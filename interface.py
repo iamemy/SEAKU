@@ -1,96 +1,134 @@
-from __future__      import annotations
-from PIL             import Image
-from PIL             import ImageDraw
-from PIL             import ImageFont
+from __future__        import annotations
+from ssd1306           import SSD1306
+from max30102          import MAX30102, calc_hr_and_spo2
 import typing
+import threading
 import time
-import Adafruit_GPIO.SPI as SPI
-import Adafruit_SSD1306
-import subprocess
 
-DISPLAY: typing.Optional[Display] = None
 
-class Display:
-    """Display class gathering methods to interface a 128x64 SSD1306 display."""
-    def __init__(self) -> None:
-        """Initializer method."""
-        
-        # Initialize the display attribute.
-        self.__display: Adafruit_SSD1306.SSD1306_128_64 = Adafruit_SSD1306.SSD1306_128_64(rst=None)
-        
-        # Initialize the width and height attributes.
-        self.__width: int = self.__display.width
-        self.__height: int = self.__display.height
-        
-        # Initialize the top attribute.
-        self.__top: int = 2
-        
-        # Initialize the image attribute.
-        self.__image: Image = Image.new('1', (self.__width, self.__height))
-        
-        # Initialize the font attribute.
-        self.__font: ImageFont.Font = ImageFont.load_default()
-        
-        # Initialize the draw attribute.
-        self.__draw: ImageDraw.Draw = ImageDraw.Draw(self.__image)
+# Initialize the DATA global variable.
+DATA: typing.Dict[str, typing.Optional[int]] = {
+    "heart_rate" : None,
+    "O2_rate"    : None
+}
 
-        # Draw a black filled box to clear the image.
-        self.__draw.rectangle((0, 0, self.__width, self.__height), outline=0, fill=0)
-        
-        # Initialize the Adafruit library.
-        self.__display.begin()
+# Initialize the MESSAGE_SENT_TIMER global variable.
+MESSAGE_SENT_TIMER: int = 0
 
-        # Clear the display.
-        self.__display.clear()
-        self.__display.display()
+
+def run_message_sent_timer() -> None:
+    """Run the message sent time routine, decrementing the global variable MESSAGE_SENT_TIMER by 1 every seconds."""
     
-    def clear(self) -> None:
-        """Clear the screen."""
-
-        # Draw a black filled box to clear the image.
-        self.__draw.rectangle((0, 0, self.__width, self.__height), outline=0, fill=0)
-        
-        # Display image.
-        self.__display.image(self.__image)
-        self.__display.display()
-
-    def write(self, text: str, x: int, y: int, font: typing.Optional[ImageFont.Font] = None) -> None:
-        """
-        Write a given text on the given coordonates.
-        The (0;0) coordonate correspond ot the top-left screen corner.
-        If no font is provided, the default one will be used.
-        
-        :param str text: The text to write on the 128x64 SSD1306 screen.
-        :param int x: The x coordonates to write the text.
-        :param int y: The y coordonate to write the text.
-        :param font: The optional font to use. By default, None.
-        :type font: ImageFont.Font
-        """
-        
-        # Draw the text on the image attribute using the draw attribute.
-        self.__draw.text((x, y), text, font=self.__font if font is None else font, fill=1)
-
-        # Display image.
-        self.__display.image(self.__image)
-        self.__display.display()
-
-
-def init_display() -> None:
-    """Initialize the 128x64 SSD1306 display."""
+    # Set the global variable MESSAGE_SENT_TIMER writable.
+    global MESSAGE_SENT_TIMER
     
-    # Make the DISPLAY global variable writable.
-    global DISPLAY
+    # Run the loop until the main thread stops.
+    while True:
+        # If the global variable MESSAGE_SENT_TIMER is not null,
+        # decrement it by 1 and block the loop for 1 seconds.
+        if MESSAGE_SENT_TIMER:
+            MESSAGE_SENT_TIMER -= 1
+            time.sleep(1)
+
+
+def run_ssd1306(ssd1306: SSD1306) -> None:
+    """
+    Run the ssd1306 device routine, writing periodically the
+    content of the DATA global variable on the SSD1306 screen.
     
-    # Initialize the DISPLAY global variable.
-    DISPLAY = Display()
+    :param SSD1306 ssd1306: The instance of the ssd1306 device to write.
+    """
+    
+    # Run the loop until the main thread stops.
+    while True:
+        # While MESSAGE_SENT_TIMER is not null, block the loop for 1 seconds.
+        while MESSAGE_SENT_TIMER:
+            time.sleep(1)
+        
+        # If the ssd1306 device is busy, block the loop for 1 seconds and continue.
+        if ssd1306.is_busy:
+            time.sleep(1)
+            continue
+        
+        # Set the ssd1306 as busy.
+        ssd1306.is_busy = True
+
+        # Clear the content of the ssd1306 device.
+        ssd1306.clear()
+        
+        # Retrieve from DATA and write the different metrics to the ssd1306 device.
+        ssd1306.write(f"""{DATA["heart_rate"]} BPM""", 0, 0)
+        ssd1306.write(f"""{DATA["O2_rate"]} 02%""", 0, 15)
+        
+        # Set the ssd1306 as not busy anymore.
+        ssd1306.is_busy = False
+        
+        # Sleep the loop for 5 seconds.
+        time.sleep(5)
+
+
+def run_max30102() -> None:
+    """Run the max30102 sensor routine, retrieving the sensor's data and writing them to the screen."""
+    
+    # Make the DATA global variable writable.
+    global DATA
+
+    # Run the loop until the main thread stops.
+    while True:
+        # Add a try/except mechanism to handle measurement fails.
+        try:
+            # Initialize a MAX30102 sensor instance.
+            sensor: MAX30102 = MAX30102()
+            
+            # Declare the variables used while iterating.
+            heart_rate: int
+            heart_rate_measured: bool
+            o2_rate: float
+            o2_rate_measured: bool
+
+            # Run the loop until the main thread stops.
+            while True:
+                # Read the data using the read_sequential and hrcalc.calc_hr_and_spo2 methods.
+                heart_rate, heart_rate_measured, o2_rate, o2_rate_measured = calc_hr_and_spo2(*sensor.read_sequential())
+                
+                # If both data have been red correctly, update the DATA global variable.
+                if heart_rate_measured and o2_rate_measured and heart_rate != -999 and o2_rate != -999:
+                    DATA["heart_rate"] = heart_rate
+                    DATA["O2_rate"]    = int(o2_rate)
+        except OSError:
+            print("Court-circuit pour le capteur MAX30102")
+            time.sleep(5)
 
 
 def main() -> None:
     """Main function."""
     
-    # Initialize the display.
-    init_display()
+    # Set the global variable MESSAGE_SENT_TIMER writable.
+    global MESSAGE_SENT_TIMER
+    
+    # Try to initialize the screen infinitely until it works.
+    while True:
+        try:
+            # Initialize the ssd1306 device.
+            ssd1306: SSD1306 = SSD1306()
+            
+            # Break the infinite loop.
+            break
+        except Exception as e:
+            # Print the obtained exception.
+            print(e)
+        
+            # Retry in 3 seconds.
+            print("Retry in 3 seconds...")
+            time.sleep(3)
 
+    # Run the different threads.
+    message_sent_timer_thread = threading.Thread(target = run_message_sent_timer, daemon=True,)
+    message_sent_timer_thread.start()
+    max30102_thread = threading.Thread(target = run_max30102, daemon=True)
+    max30102_thread.start()
+    ssd30102_thread = threading.Thread(target = run_ssd1306, daemon=True, args=(ssd1306,))
+    ssd30102_thread.start()
     
     # Loop infinitely waiting for text to write to the display.
     while True:
@@ -116,16 +154,19 @@ def main() -> None:
             else:
                 text = text[len(tmp):]
                 texts.append(tmp.strip().strip())
-            
-            
-        
-        #[text[20*i:20*(i+1)] for i in range(int(len(text)/20)+1)]
         
         # Initialize a lineno variable.
         lineno: int = 0
         
+        # If the ssd1306 device is busy, wait for it to be not busy anymore.
+        while ssd1306.is_busy:
+            pass
+        
+        # Set the ssd1306 as busy.
+        ssd1306.is_busy = True
+        
         # Clear the screen.
-        DISPLAY.clear()
+        ssd1306.clear()
         
         # Write the obtained texts.
         for text_ in texts:
@@ -134,11 +175,17 @@ def main() -> None:
                 time.sleep(5)
 
                 # Clear the display.
-                DISPLAY.clear()
+                ssd1306.clear()
                 lineno = 0
             # Write the text_ content and increment the lineno variable.
-            DISPLAY.write(text_.strip(), 0, 15*lineno)
+            ssd1306.write(text_.strip(), 0, 15*lineno)
             lineno += 1
+        
+        # Set the global variable MESSAGE_SENT_TIMER to 5.
+        MESSAGE_SENT_TIMER = 5
+        
+        # Set the ssd1306 as not busy anymore.
+        ssd1306.is_busy = False
 
 
 if __name__ == "__main__":
