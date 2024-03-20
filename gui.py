@@ -1,4 +1,5 @@
-from tkinter import *
+from tkinter      import *
+from tkinter.font import BOLD
 from PIL import Image
 from datetime import *
 import time
@@ -7,8 +8,9 @@ import time
 MESSAGE_SENT_TIMER: int = 0
 
 class Dashboard:
-    def __init__(self, ssd1306, data):
+    def __init__(self, ssd1306, ws2812b, data):
         self.ssd1306 = ssd1306
+        self.ws2812b = ws2812b
         self.data = data
         
         self.window = Tk()
@@ -54,12 +56,12 @@ class Dashboard:
         self.stat_value1bis_var = StringVar()
         self.stat_value1bis_var.set("O2%")
 
-        self.stat_label1 = Label(self.stat_block1, text="Heart & O2 rate:", bg='#d3d3d3', font=("Helvetica", 14))
+        self.stat_label1 = Label(self.stat_block1, text="Heart & O2 rate:", bg='#d3d3d3', font=("Helvetica", 14, BOLD))
         self.stat_label1.place(x=15, y=15)
-        self.stat_value1 = Label(self.stat_block1, textvariable=self.stat_value1_var, bg='#d3d3d3', font=("Helvetica", 14))
-        self.stat_value1.place(x=15, y=55)
-        self.stat_value1bis = Label(self.stat_block1, textvariable=self.stat_value1bis_var, bg='#d3d3d3', font=("Helvetica", 14))
-        self.stat_value1bis.place(x=15, y=75)
+        self.stat_value1 = Label(self.stat_block1, textvariable=self.stat_value1_var, bg='#d3d3d3', font=("Helvetica", 30))
+        self.stat_value1.place(x=15, y=65)
+        self.stat_value1bis = Label(self.stat_block1, textvariable=self.stat_value1bis_var, bg='#d3d3d3', font=("Helvetica", 30))
+        self.stat_value1bis.place(x=15, y=110)
 
         self.stat_block2 = Canvas(self.statistics_frame, bg='#d3d3d3', bd=0, highlightthickness=0)
         self.stat_block2.grid(row=0, column=1, padx=10, pady=10)
@@ -71,7 +73,7 @@ class Dashboard:
         self.stat_value2bis_var = StringVar()
         self.stat_value2bis_var.set("Altitude")
 
-        self.stat_label2 = Label(self.stat_block2, text="Pressure & Altitude:", bg='#d3d3d3', font=("Helvetica", 14))
+        self.stat_label2 = Label(self.stat_block2, text="Pressure & Altitude:", bg='#d3d3d3', font=("Helvetica", 14, BOLD))
         self.stat_label2.place(x=15, y=15)
         self.stat_value2 = Label(self.stat_block2, textvariable=self.stat_value2_var, bg='#d3d3d3', font=("Helvetica", 14))
         self.stat_value2.place(x=15, y=55)
@@ -86,9 +88,9 @@ class Dashboard:
         self.stat_value3_var = StringVar()
         self.stat_value3_var.set("Temperature")
 
-        self.stat_label3 = Label(self.stat_block3, text="Temperature:", bg='#d3d3d3', font=("Helvetica", 14))
+        self.stat_label3 = Label(self.stat_block3, text="Temperature:", bg='#d3d3d3', font=("Helvetica", 14, BOLD))
         self.stat_label3.place(x=15, y=15)
-        self.stat_value3 = Label(self.stat_block3, textvariable=self.stat_value3_var, bg='#d3d3d3', font=("Helvetica", 14))
+        self.stat_value3 = Label(self.stat_block3, textvariable=self.stat_value3_var, bg='#d3d3d3', font=("Helvetica", 30))
         self.stat_value3.place(x=15, y=55)
 
         self.stat_block4 = Canvas(self.statistics_frame, bg='#d3d3d3', bd=0, highlightthickness=0)
@@ -96,7 +98,7 @@ class Dashboard:
         #self.stat_block4.grid(row=1, columnspan=1, padx=10, pady=10)
 
 
-        self.stat_label4 = Label(self.stat_block4, text="Statistic 4:", bg='#d3d3d3', font=("Helvetica", 14))
+        self.stat_label4 = Label(self.stat_block4, text="Statistic 4:", bg='#d3d3d3', fg='#688DBD', font=("Helvetica", 14, BOLD))
         self.stat_label4.place(x=15, y=15)
         self.stat_label4 = Label(self.stat_block4, text="Value 4", bg='#d3d3d3', font=("Helvetica", 14))
         self.stat_label4.place(x=15, y=55)
@@ -106,7 +108,6 @@ class Dashboard:
         self.stat_block_with_entry.grid(row=1, column=2, padx=10, pady=10)
         self.stat_block_with_entry.create_rectangle(0, 0, 300, 100, fill='#d3d3d3', outline='#d3d3d3', width=0)
         
-
         # Customized Entry Box
         self.entry_widget = Entry(self.stat_block_with_entry, bg='#FFFFFF', fg='#000000', font=("Helvetica", 14), width=20)
         self.stat_block_with_entry.create_window(140, 85, window=self.entry_widget)
@@ -116,7 +117,6 @@ class Dashboard:
 
         # Customized Submit Button
         def submit_data():
-            
             # Make the MESSAGE_SENT_TIMER global variable writable.
             global MESSAGE_SENT_TIMER
             
@@ -192,7 +192,7 @@ class Dashboard:
         self.submit_value = Label(self.stat_block_with_entry, textvar=self.submit_value_var, bg='#d3d3d3', font=("Helvetica", 14))
         self.submit_value.place(x=45, y=175)
         
-        
+        self.emergency_label = None
     
     def update_data(self):
         """Update the data received from the sensors through the data dictionary."""
@@ -203,6 +203,18 @@ class Dashboard:
         self.stat_value2_var.set(f"""{self.data["pressure"]} bar""")
         self.stat_value2bis_var.set(f"""{self.data["altitude"]} m""")
         self.stat_value3_var.set(f"""{self.data["temperature"]} °C""")
+        
+        if self.emergency_label is not None:
+            self.emergency_label.place_forget()
+            self.emergency_label = None
+
+        time.sleep(0.5)
+        
+        # If the LED strip is in emergency mode, show up the associated Label.
+        if self.ws2812b.is_emergency:
+            self.emergency_label = Label(self.stat_block_with_entry, text="EMERGENCY", fg="#FF0000", bg='#d3d3d3', font=("Helvetica", 20))
+            self.emergency_label.place(x=45, y=200)
+
         
     def mainloop(self):
         """Wrapper method to access self.window.mainloop."""

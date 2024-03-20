@@ -1,7 +1,9 @@
 from __future__  import annotations
+from button      import wait_for_button_pressed
 from max30102    import MAX30102, calc_hr_and_spo2
 from sd18b20     import get_sd18b20_temperature
 from bmp280      import BMP280
+from ws2812b     import WS2812B
 from ssd1306     import SSD1306
 from gui         import Dashboard, MESSAGE_SENT_TIMER
 import typing
@@ -20,6 +22,16 @@ DATA: typing.Dict[str, typing.Optional[int]] = {
 
 # Initialize the APP global variable.
 APP: typing.Optional[Dashboard] = None
+
+
+def print_retry(device: str, s: int=3) -> None:
+    """Print the Retry message."""
+    print(f"Failed to initialize the {device}.")
+    print("Retry in 3 seconds", end="")
+    for _ in range(s):
+        time.sleep(1)
+        print('.', end="")
+    print()
 
 
 def run_message_sent_timer() -> None:
@@ -113,6 +125,26 @@ def run_bmp280() -> None:
             time.sleep(5)
 
 
+def run_button(ws2812b: WS2812B) -> None:
+    """
+    Run the Button routine, waiting for it to be pressed
+    in order to turn the given ws2812b into emergency mode.
+    
+    :param WS2812B ws2812b: The LED strip to turn into emergency when the button get pressed.
+    """
+    
+    # Run the loop until the main thread stops.
+    while True:
+        # Wait until the button get pressed.
+        wait_for_button_pressed()
+        
+        # Set the LED strip into emergency mode.
+        ws2812b.emergency()
+        
+        # Wait for 1 second.
+        time.sleep(1)
+
+
 def run_ssd1306(ssd1306: SSD1306) -> None:
     """
     Run the ssd1306 device routine, writing periodically the
@@ -187,12 +219,26 @@ def main() -> None:
             # Break the infinite loop.
             break
         except Exception as e:
-            # Print the obtained exception.
+            # Print the raised exception.
             print(e)
         
             # Retry in 3 seconds.
-            print("Retry in 3 seconds...")
-            time.sleep(3)
+            print_retry("ssd1306 screen")
+            
+    # Try to initialize the LED strip infinitely until it works.
+    while True:
+        try:
+            # Initialize the ws2812b device.
+            ws2812b: WS2812B = WS2812B()
+            
+            # Break the infinite loop.
+            break
+        except Exception as e:
+            # Print the raised exception.
+            print(e)
+        
+            # Retry in 3 seconds.
+            print_retry("ws2812b LED strip")
 
     # Run the different threads.
     message_sent_timer_thread: threading.Thread = threading.Thread(target = run_message_sent_timer, daemon=True,)
@@ -203,76 +249,19 @@ def main() -> None:
     sd18b20_thread.start()
     bmp280_thread: threading.Thread             = threading.Thread(target = run_bmp280, daemon=True)
     bmp280_thread.start()
+    button_thread: threading.Thread             = threading.Thread(target = run_button, daemon=True, args=(ws2812b,))
+    button_thread.start()
     ssd30102_thread: threading.Thread           = threading.Thread(target = run_ssd1306, daemon=True, args=(ssd1306,))
     ssd30102_thread.start()
 
     # Initialize the GUI.
-    APP = Dashboard(ssd1306, DATA)
+    APP = Dashboard(ssd1306, ws2812b, DATA)
 
     # Call the refresher function.
     refresher()
 
     # Running the app mainloop.
     APP.mainloop()
-    
-    return
-    
-    # Loop infinitely waiting for text to write to the display.
-    while True:
-        # Retrieve the text input from the suer.
-        text: str = input("Write the text to write on the display: ")
-        
-        # Format the text to fit within the right number of lines.
-        texts: typing.List[str] = []
-        tmp: str
-        while True:
-            if len(text) <= 20:
-                texts.append(text.strip())
-                break
-            tmp = text[:20]
-            if not tmp.endswith(' '):
-                if ' ' not in tmp:
-                    text = text[20:]
-                    texts.append(tmp.strip())
-                    continue
-                tmp = ' '.join(tmp.split(' ')[:-1])
-                text = text[len(tmp):]
-                texts.append(tmp.strip())
-            else:
-                text = text[len(tmp):]
-                texts.append(tmp.strip().strip())
-        
-        # Initialize a lineno variable.
-        lineno: int = 0
-        
-        # If the ssd1306 device is busy, wait for it to be not busy anymore.
-        while ssd1306.is_busy:
-            pass
-        
-        # Set the ssd1306 as busy.
-        ssd1306.is_busy = True
-        
-        # Clear the screen.
-        ssd1306.clear()
-        
-        # Write the obtained texts.
-        for text_ in texts:
-            if lineno == 4:
-                # Wait 5 seconds for the display's content to be read.
-                time.sleep(5)
-
-                # Clear the display.
-                ssd1306.clear()
-                lineno = 0
-            # Write the text_ content and increment the lineno variable.
-            ssd1306.write(text_.strip(), 0, 15*lineno)
-            lineno += 1
-        
-        # Set the global variable MESSAGE_SENT_TIMER to 5.
-        MESSAGE_SENT_TIMER = 5
-        
-        # Set the ssd1306 as not busy anymore.
-        ssd1306.is_busy = False
 
 
 if __name__ == "__main__":

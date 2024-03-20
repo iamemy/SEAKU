@@ -7,7 +7,7 @@ import Adafruit_SSD1306
 
 
 class SSD1306:
-    """Display class gathering methods to interface a 128x64 SSD1306 display."""
+    """SSD1306 class gathering methods to interface a 128x64 SSD1306 display."""
     def __init__(self) -> None:
         """Initializer method."""
         
