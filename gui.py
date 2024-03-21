@@ -1,8 +1,13 @@
+from stopwatch    import Stopwatch
 from tkinter      import *
 from tkinter.font import BOLD
 from PIL import Image
 from datetime import *
 import time
+
+# Plot specific imports
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 # Initialize the MESSAGE_SENT_TIMER global variable.
 MESSAGE_SENT_TIMER: int = 0
@@ -44,6 +49,7 @@ class Dashboard:
         self.statistics_frame.grid_columnconfigure(0, weight=1)
         self.statistics_frame.grid_columnconfigure(1, weight=1)
         self.statistics_frame.grid_columnconfigure(2, weight=1)
+        self.statistics_frame.grid_columnconfigure(3, weight=1)
 
         # Example statistics blocks 
         self.stat_block1 = Canvas(self.statistics_frame, bg='#d3d3d3', bd=0, highlightthickness=0)
@@ -102,10 +108,28 @@ class Dashboard:
         self.stat_label4.place(x=15, y=15)
         self.stat_label4 = Label(self.stat_block4, text="Value 4", bg='#d3d3d3', font=("Helvetica", 14))
         self.stat_label4.place(x=15, y=55)
+        
+        # Create a figure
+        fig = Figure(figsize=(5, 4), dpi=100)
+        self.plot_ax = fig.add_subplot(111)
+
+        # Example data
+        self.plot_x = []
+        self.plot_y = []
+
+        # Plot the data
+        self.plot_ax.plot(self.plot_x, self.plot_y)
+
+        # Create a canvas containing the figure
+        self.plot_canvas = FigureCanvasTkAgg(fig, master=self.stat_block4)
+        self.plot_canvas.draw()
+
+        # Place the canvas on the Tkinter window
+        self.plot_canvas.get_tk_widget().place(x=20, y=95, width=700, height=250)
 
         # Statistic block with entry and submit button
         self.stat_block_with_entry = Canvas(self.statistics_frame, bg='#d3d3d3', bd=0, highlightthickness=0)
-        self.stat_block_with_entry.grid(row=1, column=2, padx=10, pady=10)
+        self.stat_block_with_entry.grid(row=1, column=3, padx=10, pady=10)
         self.stat_block_with_entry.create_rectangle(0, 0, 300, 100, fill='#d3d3d3', outline='#d3d3d3', width=0)
         
         # Customized Entry Box
@@ -192,7 +216,31 @@ class Dashboard:
         self.submit_value = Label(self.stat_block_with_entry, textvar=self.submit_value_var, bg='#d3d3d3', font=("Helvetica", 14))
         self.submit_value.place(x=45, y=175)
         
+        # Stopwatch block
+        self.stopwatch_block = Canvas(self.statistics_frame, bg="#eff5f6", bd=0, highlightthickness=0)
+        self.stopwatch_block.grid(row=0, column=3, padx=10, pady=10)
+        self.stopwatch_block.create_rectangle(0, 0, 300, 100, fill='#eff5f6', outline='#eff5f6', width=0)
+        
+        # Ad the Stopwatch to the stopwatch block.
+        Stopwatch(self.stopwatch_block)
+        
         self.emergency_label = None
+    
+    def update_plot(self):
+        """Update the plot of the temperature over time."""
+        
+        # Update the plot X.
+        self.plot_x.append(datetime.now())
+        if len(self.plot_x) == 101:
+            self.plot_x = self.plot_x[1:]
+        
+        # Update the plot Y.
+        self.plot_y.append(self.data["temperature"])
+        if len(self.plot_y) == 101:
+            self.plot_y = self.plot_y[1:]
+        
+        self.plot_ax.plot(self.plot_x, self.plot_y)
+        self.plot_canvas.draw()
     
     def update_data(self):
         """Update the data received from the sensors through the data dictionary."""

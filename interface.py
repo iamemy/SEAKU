@@ -194,6 +194,9 @@ def run_ssd1306(ssd1306: SSD1306) -> None:
 def refresher() -> None:
     """Refresh function for updating the GUI by calling update_data method."""
     
+    # Call the gui's update_plot method.
+    APP.update_plot()
+    
     # Call the gui's update_data method.
     APP.update_data()
     

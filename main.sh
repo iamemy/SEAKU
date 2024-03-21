@@ -7,4 +7,4 @@ raspivid -o - -n -t 0 -hf -w 1080 -h 720 -fps 24 | cvlc -vvv stream:///dev/stdin
 
 # Run the Python code for interfacing
 # the sensors and write the screen.
-python interface.py
+python3 interface.py
