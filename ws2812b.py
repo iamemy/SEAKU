@@ -16,6 +16,9 @@ class WS2812B(Adafruit_NeoPixel):
         
         # Initialize the LED strip.
         self.begin()
+        
+        # Set the ws2812b LED strip into idle mode.
+        self.idle()
     
     def idle(self) -> None:
         """Show the LED strip in IDLE mode."""

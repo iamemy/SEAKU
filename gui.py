@@ -81,10 +81,10 @@ class Dashboard:
 
         self.stat_label2 = Label(self.stat_block2, text="Pressure & Altitude:", bg='#d3d3d3', font=("Helvetica", 14, BOLD))
         self.stat_label2.place(x=15, y=15)
-        self.stat_value2 = Label(self.stat_block2, textvariable=self.stat_value2_var, bg='#d3d3d3', font=("Helvetica", 14))
-        self.stat_value2.place(x=15, y=55)
-        self.stat_value2 = Label(self.stat_block2, textvariable=self.stat_value2bis_var, bg='#d3d3d3', font=("Helvetica", 14))
-        self.stat_value2.place(x=15, y=75)
+        self.stat_value2 = Label(self.stat_block2, textvariable=self.stat_value2_var, bg='#d3d3d3', font=("Helvetica", 30))
+        self.stat_value2.place(x=15, y=65)
+        self.stat_value2 = Label(self.stat_block2, textvariable=self.stat_value2bis_var, bg='#d3d3d3', font=("Helvetica", 30))
+        self.stat_value2.place(x=15, y=110)
 
         self.stat_block3 = Canvas(self.statistics_frame, bg='#d3d3d3', bd=0, highlightthickness=0)
         self.stat_block3.grid(row=0, column=2, padx=10, pady=10)
@@ -97,7 +97,7 @@ class Dashboard:
         self.stat_label3 = Label(self.stat_block3, text="Temperature:", bg='#d3d3d3', font=("Helvetica", 14, BOLD))
         self.stat_label3.place(x=15, y=15)
         self.stat_value3 = Label(self.stat_block3, textvariable=self.stat_value3_var, bg='#d3d3d3', font=("Helvetica", 30))
-        self.stat_value3.place(x=15, y=55)
+        self.stat_value3.place(x=15, y=65)
 
         self.stat_block4 = Canvas(self.statistics_frame, bg='#d3d3d3', bd=0, highlightthickness=0)
         self.stat_block4.place(x=110, y=397, width=980, height=450)
