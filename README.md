@@ -107,6 +107,14 @@ Le token n'est évidemment pas donné ici.
 		`sudo pip3 install rpi_ws281x`
 		`sudo pip3 install adafruit-circuitpython-neopixel`
 		`sudo python3 -m pip install --force-reinstall adafruit-blinka`
+	- Librairie d'utilisation des graphiques dans le GUI:
+        1. Utiliser les commandes suivante pour installer les bibliothèques matplotlib et numpy:
+        `sudo apt-get install python-dev libatlas3-base`
+        _(Puis  accepter en entrant **o**)_
+		`sudo pip3 install matplotlib`
+		`sudo pip3 install matplotlib`
+		`sudo pip3 install numpy==1.21`
+		`sudo apt-get install python3-pil.imagetk`
 6. Tout est prêt pour l'execution du software, à l'aide de la commande suivante:
 `./main.sh`
 7. Bravo! Il est désormais possible d'interragir avec le casque SEAKU grâce au Dashboard sous vos yeux.
