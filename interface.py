@@ -195,7 +195,7 @@ def refresher() -> None:
     """Refresh function for updating the GUI by calling update_data method."""
     
     # Call the gui's update_plot method.
-    APP.update_plot()
+    APP.update_plots()
     
     # Call the gui's update_data method.
     APP.update_data()

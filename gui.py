@@ -103,29 +103,37 @@ class Dashboard:
         self.stat_block4.place(x=110, y=397, width=980, height=450)
         #self.stat_block4.grid(row=1, columnspan=1, padx=10, pady=10)
 
-
         self.stat_label4 = Label(self.stat_block4, text="Statistic 4:", bg='#d3d3d3', fg='#688DBD', font=("Helvetica", 14, BOLD))
         self.stat_label4.place(x=15, y=15)
         self.stat_label4 = Label(self.stat_block4, text="Value 4", bg='#d3d3d3', font=("Helvetica", 14))
         self.stat_label4.place(x=15, y=55)
         
-        # Create a figure
-        fig = Figure(figsize=(5, 4), dpi=100)
-        self.plot_ax = fig.add_subplot(111)
+        # Create the temperature/pressure figures and plots
+        temperature_fig = Figure(figsize=(5, 4), dpi=100)
+        pressure_fig = Figure(figsize=(5, 4), dpi=100)
+        self.temperature_plot_ax = temperature_fig.add_subplot(111)
+        self.pressure_plot_ax = pressure_fig.add_subplot(111)
 
-        # Example data
+        # Initialize the plots lists.
         self.plot_x = []
-        self.plot_y = []
+        self.temperature_plot_y = []
+        self.pressure_plot_y = []
 
         # Plot the data
-        self.plot_ax.plot(self.plot_x, self.plot_y)
+        self.temperature_plot_ax.plot(self.plot_x, self.temperature_plot_y)
+        self.pressure_plot_ax.plot(self.plot_x, self.pressure_plot_y)
 
-        # Create a canvas containing the figure
-        self.plot_canvas = FigureCanvasTkAgg(fig, master=self.stat_block4)
-        self.plot_canvas.draw()
+        # Create a canvas containing the temperature figure
+        self.temperature_plot_canvas = FigureCanvasTkAgg(temperature_fig, master=self.stat_block4)
+        self.temperature_plot_canvas.draw()
+        
+        # Create a canvas containing the pressure figure
+        self.pressure_plot_canvas = FigureCanvasTkAgg(pressure_fig, master=self.stat_block4)
+        self.pressure_plot_canvas.draw()
 
         # Place the canvas on the Tkinter window
-        self.plot_canvas.get_tk_widget().place(x=20, y=95, width=700, height=250)
+        self.temperature_plot_canvas.get_tk_widget().place(x=20, y=95, width=700, height=250)
+        self.pressure_plot_canvas.get_tk_widget().place(x=20, y=400, width=700, height=250)
 
         # Statistic block with entry and submit button
         self.stat_block_with_entry = Canvas(self.statistics_frame, bg='#d3d3d3', bd=0, highlightthickness=0)
@@ -226,21 +234,29 @@ class Dashboard:
         
         self.emergency_label = None
     
-    def update_plot(self):
-        """Update the plot of the temperature over time."""
+    def update_plots(self):
+        """Update the plots of the temperature/pressure over time."""
         
         # Update the plot X.
         self.plot_x.append(datetime.now())
         if len(self.plot_x) == 101:
             self.plot_x = self.plot_x[1:]
         
-        # Update the plot Y.
-        self.plot_y.append(self.data["temperature"])
-        if len(self.plot_y) == 101:
-            self.plot_y = self.plot_y[1:]
+        # Update the temperature plot Y.
+        self.temperature_plot_y.append(self.data["temperature"])
+        if len(self.temperature_plot_y) == 101:
+            self.temperature_plot_y = self.temperature_plot_y[1:]
+
+        # Update the pressure plot Y.
+        self.pressure_plot_y.append(self.data["pressure"])
+        if len(self.pressure_plot_y) == 101:
+            self.pressure_plot_y = self.pressure_plot_y[1:]
         
-        self.plot_ax.plot(self.plot_x, self.plot_y)
-        self.plot_canvas.draw()
+        # Update and re-draw the canvas.
+        self.temperature_plot_ax.plot(self.plot_x, self.temperature_plot_y)
+        self.pressure_plot_ax.plot(self.plot_x, self.pressure_plot_y)
+        self.temperature_plot_canvas.draw()
+        self.pressure_plot_canvas.draw()
     
     def update_data(self):
         """Update the data received from the sensors through the data dictionary."""
@@ -271,3 +287,6 @@ class Dashboard:
     def after(self, time_ms, func):
         """Wrapper method to access self.window.after."""
         self.window.after(time_ms, func)
+
+d = Dashboard(None, None, None)
+d.mainloop()
