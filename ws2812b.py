@@ -44,12 +44,12 @@ class WS2812B(Adafruit_NeoPixel):
         
         # Set the brightness to EMERGENCY brightness.
         self.setBrightness(self.__emergency_brightness)
-        
+
         # Loop for 10 seconds.
         for _ in range(10):
             # For each LED, give it the EMERGENCY color.
             for i in range(self.numPixels()):
-                self.setPixelColor(i, Color(255, 0, 0))
+                self.setPixelColor(i, Color(127, 0, 255))
             
             # Update the LED strip.
             self.show()

@@ -7,6 +7,7 @@ from ws2812b     import WS2812B
 from ssd1306     import SSD1306
 from gui         import Dashboard, MESSAGE_SENT_TIMER
 import typing
+import _rpi_ws281x   as ws
 import threading
 import time
 
@@ -141,8 +142,8 @@ def run_button(ws2812b: WS2812B) -> None:
         # Set the LED strip into emergency mode.
         ws2812b.emergency()
         
-        # Wait for 1 second.
-        time.sleep(1)
+        # Wait for 10 second.
+        time.sleep(10)
 
 
 def run_ssd1306(ssd1306: SSD1306) -> None:
@@ -242,29 +243,32 @@ def main() -> None:
         
             # Retry in 3 seconds.
             print_retry("ws2812b LED strip")
+            
+    try:
+        # Run the different threads.
+        message_sent_timer_thread: threading.Thread = threading.Thread(target = run_message_sent_timer, daemon=True,)
+        message_sent_timer_thread.start()
+        max30102_thread: threading.Thread           = threading.Thread(target = run_max30102, daemon=True)
+        max30102_thread.start()
+        sd18b20_thread: threading.Thread            = threading.Thread(target = run_sd18b20, daemon=True)
+        sd18b20_thread.start()
+        bmp280_thread: threading.Thread             = threading.Thread(target = run_bmp280, daemon=True)
+        bmp280_thread.start()
+        button_thread: threading.Thread             = threading.Thread(target = run_button, daemon=True, args=(ws2812b,))
+        button_thread.start()
+        ssd30102_thread: threading.Thread           = threading.Thread(target = run_ssd1306, daemon=True, args=(ssd1306,))
+        ssd30102_thread.start()
 
-    # Run the different threads.
-    message_sent_timer_thread: threading.Thread = threading.Thread(target = run_message_sent_timer, daemon=True,)
-    message_sent_timer_thread.start()
-    max30102_thread: threading.Thread           = threading.Thread(target = run_max30102, daemon=True)
-    max30102_thread.start()
-    sd18b20_thread: threading.Thread            = threading.Thread(target = run_sd18b20, daemon=True)
-    sd18b20_thread.start()
-    bmp280_thread: threading.Thread             = threading.Thread(target = run_bmp280, daemon=True)
-    bmp280_thread.start()
-    button_thread: threading.Thread             = threading.Thread(target = run_button, daemon=True, args=(ws2812b,))
-    button_thread.start()
-    ssd30102_thread: threading.Thread           = threading.Thread(target = run_ssd1306, daemon=True, args=(ssd1306,))
-    ssd30102_thread.start()
+        # Initialize the GUI.
+        APP = Dashboard(ssd1306, ws2812b, DATA)
 
-    # Initialize the GUI.
-    APP = Dashboard(ssd1306, ws2812b, DATA)
+        # Call the refresher function.
+        refresher()
 
-    # Call the refresher function.
-    refresher()
-
-    # Running the app mainloop.
-    APP.mainloop()
+        # Running the app mainloop.
+        APP.mainloop()
+    except KeyboardInterrupt:
+        print("Program aborted")
 
 
 if __name__ == "__main__":
