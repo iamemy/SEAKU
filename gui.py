@@ -29,7 +29,7 @@ class Dashboard:
         self.header.place(x=0, y=0, width=1920, height=150) # Full width header
 
         #Heading
-        self.heading = Label (self.window, text='SEAKU DASHBOARD', font=("", 25, "bold"), fg='#ffffff', bg='#243D5D')
+        self.heading = Label (self.window, text='SEAKU DASHBOARD', font=("", 20, "bold"), fg='#ffffff', bg='#243D5D')
         self.heading.place (x=50, y=15)
 
         # Content area with grey background
@@ -117,14 +117,14 @@ class Dashboard:
         self.stat_value3.place(x=15, y=65)
 
         self.stat_block4 = Canvas(self.statistics_frame, bg='#688DBD', bd=0, highlightthickness=0)
-        self.stat_block4.place(x=490, y=50, width=820, height=380)
+        self.stat_block4.place(x=480, y=50, width=820, height=380)
         #self.stat_block4.grid(row=1, columnspan=1, padx=10, pady=10)
 
         self.stat_label4 = Label(self.stat_block4, text="Temperature-Time Graph", bg='#688DBD', fg='#243D5D', font=("Helvetica", 20, BOLD))
         self.stat_label4.place(x=15, y=15)
         
         self.stat_block5 = Canvas(self.statistics_frame, bg='#688DBD', bd=0, highlightthickness=0)
-        self.stat_block5.place(x=490, y=465, width=820, height=380)
+        self.stat_block5.place(x=480, y=465, width=820, height=380)
         #self.stat_block4.grid(row=1, columnspan=1, padx=10, pady=10)
 
         self.stat_label5 = Label(self.stat_block5, text="Diver Profile", bg='#688DBD', fg='#243D5D', font=("Helvetica", 20, BOLD))
@@ -155,8 +155,8 @@ class Dashboard:
         self.pressure_plot_canvas.draw()
 
         # Place the canvas on the Tkinter window
-        self.temperature_plot_canvas.get_tk_widget().place(x=20, y=70, width=700, height=250)
-        self.pressure_plot_canvas.get_tk_widget().place(x=20, y=70, width=700, height=250)
+        self.temperature_plot_canvas.get_tk_widget().place(x=50, y=70, width=700, height=250)
+        self.pressure_plot_canvas.get_tk_widget().place(x=50, y=70, width=700, height=250)
 
         # Statistic block with entry and submit button
         self.stat_block_with_entry = Canvas(self.statistics_frame, bg='#688DBD', bd=0, highlightthickness=0)
@@ -170,13 +170,14 @@ class Dashboard:
         self.label_widget = Label(self.stat_block_with_entry, text="Chat Box", bg='#688DBD', fg='#243D5D', font=("Helvetica", 20, BOLD))
         self.label_widget.place(x=15, y=15)
         
-        self.emergency_label = Label(self.stat_block_with_entry, text="EMERGENCY", bg='#688DBD', fg='#FF0000', font=("Helvetica", 20, BOLD))
-        self.emergency_label.place(x=15, y=45)
+        self.emergency_label = None
 
         # Customized Submit Button
         def submit_data():
             # Make the MESSAGE_SENT_TIMER global variable writable.
             global MESSAGE_SENT_TIMER
+            
+            print("Entering submit_date!")
             
             # Retrieve the input from the user.
             text: str = self.entry_widget.get()
@@ -238,17 +239,18 @@ class Dashboard:
             
             # Show a "message sent" message on the GUI.
             self.submit_value_var.set("Message sent")
-            self.after(3000, lambda: self.submit_value_var.set(""))
+            print("LABEL SHOULD SHOW UP!")
+            self.after(10000, lambda: self.submit_value_var.set(""))
 
         self.submit_button = Button(self.stat_block_with_entry, text='Submit', command=submit_data, bg='#243D5D', fg='#FFFFFF', font=("Helvetica", 14), activebackground='#FF8A00')
-        self.stat_block_with_entry.create_window(285, 165, window=self.submit_button)
+        self.stat_block_with_entry.create_window(285, 158, window=self.submit_button)
         
         # Create a StringVar to assign to the submit_value Label to be created.
         self.submit_value_var = StringVar()
         self.submit_value_var.set("")
         
-        self.submit_value = Label(self.stat_block_with_entry, textvar=self.submit_value_var, bg='#688DBD', font=("Helvetica", 14))
-        self.submit_value.place(x=55, y=175)
+        self.submit_value = Label(self.stat_block_with_entry, textvar=self.submit_value_var, bg='#688DBD', fg='#ffffff', font=("Helvetica", 14))
+        self.submit_value.place(x=15, y=45)
         
         # Stopwatch block
         self.stopwatch_block = Canvas(self.statistics_frame, bg="#eff5f6", bd=0, highlightthickness=0)
@@ -300,8 +302,8 @@ class Dashboard:
         
         # If the LED strip is in emergency mode, show up the associated Label.
         if self.ws2812b.is_emergency:
-            self.emergency_label = Label(self.stat_block_with_entry, text="EMERGENCY", fg="#FF0000", bg='#FF8A00', font=("Helvetica", 20, BOLD))
-            self.emergency_label.place(x=15, y=45)
+            self.emergency_label = Label(self.block_ongoing, text="EMERGENCY", fg="#FFFFFF", bg='#FF0000', font=("Helvetica", 30, BOLD))
+            self.emergency_label.place(x=20, y=120)
 
         
     def mainloop(self):
@@ -312,5 +314,5 @@ class Dashboard:
         """Wrapper method to access self.window.after."""
         self.window.after(time_ms, func)
 
-# d = Dashboard(None, None, None)
-# d.mainloop()
+#d = Dashboard(None, None, None)
+#d.mainloop()
